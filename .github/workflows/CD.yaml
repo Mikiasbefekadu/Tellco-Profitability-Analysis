@@ -1,0 +1,53 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main  # Trigger the deployment on successful push to the master branch
+  workflow_dispatch:  # Allows manual triggering from GitHub Actions UI
+
+jobs:
+  deploy:
+    runs-on: windows-latest  # Use Windows environment for deployment job
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python (ensure the same version as in CI pipeline)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      # Step 3: Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Install Python dependencies
+
+      # Step 4: Set up environment-specific configurations (e.g., credentials)
+      - name: Set up environment variables
+        run: |
+          echo "Setting up environment variables"
+          # Set any necessary environment variables like API keys or deployment configurations
+          # Example: export VAR_NAME=value (You can also use GitHub Secrets here)
+        shell: bash
+
+      # Step 5: Deploy to your server or cloud service
+      - name: Deploy to Production
+        run: |
+          # Example of deployment using FTP, cloud, or another deployment service
+          echo "Deploying to production environment"
+          # You can replace this with actual deployment commands
+          # Example: Deploy via SSH (adjust based on your deployment process)
+          # ssh user@your-server "cd /path/to/your/app && git pull && python manage.py migrate"
+
+      # Step 6: Post-deployment validation (optional)
+      - name: Post-deployment validation
+        run: |
+          echo "Running post-deployment checks"
+          # You can run tests or checks here to ensure your deployment was successful
+          # Example: curl to check app status or verify service is running
+          # curl http://yourapp.com/health-check

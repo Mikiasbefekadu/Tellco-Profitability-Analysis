@@ -1,0 +1,43 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - master  # Trigger the pipeline on pushes to the master branch
+  pull_request:
+    branches:
+      - master  # Trigger the pipeline on pull requests targeting the master branch
+  workflow_dispatch:  # Allows manual triggering from GitHub Actions UI
+
+jobs:
+  test:
+    runs-on: windows-latest  # Run on the latest Windows runner provided by GitHub Actions
+
+    steps:
+      # Step 1: Checkout code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python (specify the version you want to use, e.g., 3.x)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      # Step 3: Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Install Python dependencies
+
+      # Step 4: Run unit tests (ensure test files are in the right directory)
+      - name: Run unit tests
+        run: |
+          python -m unittest discover -s tests  # Discover and run tests from the 'tests' folder
+          
+      # Optional: You can add more steps such as linting, coverage, etc.
+      # Example: Run Pylint for Python code quality checks
+      # - name: Run Pylint
+      #   run: |
+      #     pip install pylint
+      #     pylint your_python_module/

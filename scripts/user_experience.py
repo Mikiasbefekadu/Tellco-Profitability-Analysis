@@ -42,55 +42,71 @@ def aggregate_user_experience(data):
     return data
 
 
+
+
 def compute_top_bottom_frequent(data):
     # Using the appropriate columns from the dataset
-    tcp_dl_values = data['TCP DL Retrans. Vol (Bytes)']
-    tcp_ul_values = data['TCP UL Retrans. Vol (Bytes)']
-    rtt_dl_values = data['Avg RTT DL (ms)']
-    rtt_ul_values = data['Avg RTT UL (ms)']
-    tp_dl_values = data['Avg Bearer TP DL (kbps)']
-    tp_ul_values = data['Avg Bearer TP UL (kbps)']
+    metrics = {
+        'tcp_dl': data['TCP DL Retrans. Vol (Bytes)'],
+        'tcp_ul': data['TCP UL Retrans. Vol (Bytes)'],
+        'rtt_dl': data['Avg RTT DL (ms)'],
+        'rtt_ul': data['Avg RTT UL (ms)'],
+        'throughput_dl': data['Avg Bearer TP DL (kbps)'],
+        'throughput_ul': data['Avg Bearer TP UL (kbps)']
+    }
 
-    # Function to compute top, bottom, and most frequent values
-    def compute_stats(values, label):
+    def compute_stats(values):
         return {
-            f"top_10_{label}": values.nlargest(10),
-            f"bottom_10_{label}": values.nsmallest(10),
-            f"most_frequent_{label}": values.mode().iloc[0] if not values.mode().empty else None,
+            "top_10": values.nlargest(10),
+            "bottom_10": values.nsmallest(10),
+            "most_frequent": values.mode().iloc[0] if not values.mode().empty else None,
         }
 
-    # Compute for each metric
-    results = {
-        **compute_stats(tcp_dl_values, "tcp_dl"),
-        **compute_stats(tcp_ul_values, "tcp_ul"),
-        **compute_stats(rtt_dl_values, "rtt_dl"),
-        **compute_stats(rtt_ul_values, "rtt_ul"),
-        **compute_stats(tp_dl_values, "throughput_dl"),
-        **compute_stats(tp_ul_values, "throughput_ul"),
-    }
+    results = {}
+
+    for label, values in metrics.items():
+        stats = compute_stats(values)
+        results[label] = stats
+
+        # Visualization
+        plt.figure(figsize=(12, 4))
+
+        # Top 10 visualization
+        plt.subplot(1, 3, 1)
+        stats["top_10"].plot(kind="bar", color="skyblue")
+        plt.title(f"Top 10 {label}")
+        plt.xticks(rotation=45)
+
+        # Bottom 10 visualization
+        plt.subplot(1, 3, 2)
+        stats["bottom_10"].plot(kind="bar", color="orange")
+        plt.title(f"Bottom 10 {label}")
+        plt.xticks(rotation=45)
+
+        # Most frequent value visualization
+        plt.subplot(1, 3, 3)
+        plt.bar([label], [stats["most_frequent"]], color="green")
+        plt.title(f"Most Frequent {label}")
+        plt.xticks(rotation=45)
+
+        plt.tight_layout()
+        plt.show()
 
     return results
 
-def compute_other_statistics(data):
-    # Correct columns for statistics
-    relevant_columns = [
-        'TCP DL Retrans. Vol (Bytes)', 
-        'TCP UL Retrans. Vol (Bytes)', 
-        'Avg RTT DL (ms)', 
-        'Avg RTT UL (ms)', 
-        'Avg Bearer TP DL (kbps)', 
-        'Avg Bearer TP UL (kbps)'
-    ]
-    
-    # Ensure all columns exist in the dataset
-    existing_columns = [col for col in relevant_columns if col in data.columns]
-    
-    if not existing_columns:
-        raise ValueError("None of the required columns are present in the dataset.")
-    
-    # Compute mean, std, and median
-    stats = data[existing_columns].agg(['mean', 'std', 'median'])
-    return stats
+
+
+
+def compute_satisfaction_score(data, engagement_scores, experience_scores):
+    # Assign scores to the DataFrame
+    data['engagement_score'] = engagement_scores
+    data['experience_score'] = experience_scores
+    data['satisfaction_score'] = (data['engagement_score'] + data['experience_score']) / 2
+
+    # Sort by satisfaction score and return the top 10 satisfied customers
+    top_10_satisfied = data[['Bearer Id', 'satisfaction_score']].sort_values(by='satisfaction_score', ascending=False).head(10)
+    return top_10_satisfied
+
 
 
 def plot_throughput_per_handset(data):
